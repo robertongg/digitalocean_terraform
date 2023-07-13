@@ -1,13 +1,13 @@
 #images
 resource "docker_image" "bgg-database" {
-    name = "chukmunlee/bgg-database:${var.database_version}"
+    name = "chukmunnlee/bgg-database:${var.database_version}"
 }
 
 resource "docker_image" "bgg-backend" {
-    name = "chukmunlee/bgg-backend:${var.backend_version}"
+    name = "chukmunnlee/bgg-backend:${var.backend_version}"
 }
 
-resource "docker_network" "bgg-network" {
+resource "docker_network" "bgg-net" {
     name = "${var.app_namespace}-bgg-net"
 }
 
@@ -16,7 +16,7 @@ resource "docker_volume" "data-vol" {
 }
 
 ## Spin off a container
-resource "docker_container" "bgg-database" {
+resource "docker_container" "bgg-database"{
     name = "${var.app_namespace}-bgg-database"
     image = docker_image.bgg-database.image_id
 
@@ -40,13 +40,13 @@ resource "docker_container" "bgg-backend" {
     name = "${var.app_namespace}-bgg-backend-${count.index}"
     image = docker_image.bgg-backend.image_id
 
-    networks_advanced {
+     networks_advanced {
         name = docker_network.bgg-net.id
     }
 
     env = [
         "BGG_DB_USER=root",
-        "BGG_DB_PASSSWORD=changeit",
+        "BGG_DB_PASSWORD=changeit",
         "BGG_DB_HOST=${docker_container.bgg-database.name}",
     ]
 
@@ -73,19 +73,18 @@ resource "digitalocean_droplet" "nginx" {
     region = var.do_region
     size = var.do_size
 
-    ssh_keys = [ data.data.digitalocean_ssh_key.www-1.id ]
+    ssh_keys = [ data.digitalocean_ssh_key.www-1.id ]
 
     connection {
         type = "ssh"
         user = "root"
-        private_key = file(var.ssh_private_key)
-        host = self.ipv4_address
+        private_key =  file(var.ssh_private_key)
+        host= self.ipv4_address
     }
 
     provisioner "remote-exec" {
         inline = [
             "apt update -y",
-            "apt upgrade -y",
             "apt install nginx -y",
         ]
     }
@@ -103,14 +102,14 @@ resource "digitalocean_droplet" "nginx" {
     }
 }
 
-resource "local_file" "root_at_nginx" {
+resource "local_file" "root_at_nginx"{
     filename = "root@${digitalocean_droplet.nginx.ipv4_address}"
     content = ""
     file_permission = "0444"
 }
 
 output nginx_ip {
-    value = digitalocean_droplet.nginx.ipv4_address
+    value= digitalocean_droplet.nginx.ipv4_address
 }
 
 output backend_ports {
